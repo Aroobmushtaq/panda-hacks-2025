@@ -123,36 +123,40 @@ st.session_state.user_data = load_user_data()
 HF_API_KEY = os.getenv("HF_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+# Initialize session state for failed models
+if 'failed_models' not in st.session_state:
+    st.session_state.failed_models = set()
+if 'working_model' not in st.session_state:
+    st.session_state.working_model = None
+
 # List of free models to try (in order of preference)
 FREE_MODELS = [
-    # Text generation models that usually work with free API
     "openai-community/gpt2",         # Most reliable
     "google/flan-t5-small",          # Smaller, more accessible
     "distilgpt2",                    # Lightweight GPT-2
     "microsoft/DialoGPT-small",      # Smaller version
-    "facebook/opt-125m",             # Meta's open model
-    "bigscience/bloom-560m",         # Multilingual model
-    "EleutherAI/gpt-neo-125M",       # EleutherAI model
-    "google/flan-t5-base",           # Keep trying the good ones
-    "microsoft/DialoGPT-medium",     
-    "gpt2",                          
-    "distilbert-base-uncased",       
-    "facebook/blenderbot-400M-distill",
 ]
 
-# Hugging Face API calls with multiple model fallback
+# Hugging Face API calls with smart caching
 def call_huggingface_api(prompt: str, model: str = None) -> Optional[str]:
     if not HF_API_KEY:
-        st.warning("⚠️ Hugging Face API key not found. Add HF_API_KEY to get AI-generated questions!")
         return None
     
-    # If no specific model provided, try our free models in order
-    models_to_try = [model] if model else FREE_MODELS
+    # If we found a working model before, try it first
+    if st.session_state.working_model and st.session_state.working_model not in st.session_state.failed_models:
+        models_to_try = [st.session_state.working_model]
+    else:
+        # Filter out models we know don't work
+        models_to_try = [m for m in FREE_MODELS if m not in st.session_state.failed_models]
+        if not models_to_try:
+            # Reset failed models if all failed (maybe they work now)
+            st.session_state.failed_models.clear()
+            models_to_try = FREE_MODELS[:2]  # Try just 2 models
     
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
     
     for current_model in models_to_try:
-        if not current_model:
+        if current_model in st.session_state.failed_models:
             continue
             
         url = f"https://api-inference.huggingface.co/models/{current_model}"
@@ -162,113 +166,66 @@ def call_huggingface_api(prompt: str, model: str = None) -> Optional[str]:
             payload = {
                 "inputs": prompt,
                 "parameters": {
-                    "max_new_tokens": 150,
-                    "temperature": 0.7,
-                    "do_sample": True
-                }
-            }
-        elif "gpt2" in current_model:
-            payload = {
-                "inputs": prompt,
-                "parameters": {
-                    "max_length": 200,
-                    "temperature": 0.8,
-                    "do_sample": True,
-                    "pad_token_id": 50256
+                    "max_new_tokens": 100,
+                    "temperature": 0.7
                 }
             }
         else:
             payload = {
                 "inputs": prompt,
                 "parameters": {
-                    "max_new_tokens": 150,
-                    "temperature": 0.7
+                    "max_new_tokens": 100,
+                    "temperature": 0.7,
+                    "do_sample": True
                 }
             }
         
         try:
-            with st.spinner(f"🤖 Trying {current_model}..."):
-                response = requests.post(url, headers=headers, json=payload, timeout=30)
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    
-                    # Handle different response formats
-                    if isinstance(result, list) and len(result) > 0:
-                        generated_text = result[0].get("generated_text", "")
-                    elif isinstance(result, dict):
-                        generated_text = result.get("generated_text", "")
-                    else:
-                        continue
-                    
-                    # Clean up the response
-                    if generated_text:
-                        # Remove the original prompt if it's included
-                        cleaned_text = generated_text.replace(prompt, "").strip()
-                        if cleaned_text:
-                            st.success(f"✅ Generated content using {current_model}")
-                            return cleaned_text
-                
-                elif response.status_code == 503:
-                    st.info(f"⏳ Model {current_model} is loading, trying next...")
-                    continue
-                else:
-                    st.warning(f"⚠️ Model {current_model} returned {response.status_code}, trying next...")
-                    continue
-                    
-        except requests.exceptions.Timeout:
-            st.warning(f"⏰ {current_model} timed out, trying next...")
-            continue
-        except Exception as e:
-            st.warning(f"⚠️ {current_model} error: {str(e)[:50]}..., trying next...")
-            continue
-    
-    # Try alternative free APIs
-    if HF_API_KEY:  # Only try if user has some API interest
-        cohere_result = try_cohere_api(prompt)
-        if cohere_result:
-            st.success("✅ Generated content using Cohere API")
-            return cohere_result
-    
-    st.info("🔄 All free models are busy. Using enhanced fallback questions!")
-    return None
-    
-# Alternative free API option - Cohere
-def try_cohere_api(prompt: str) -> Optional[str]:
-    """Try Cohere's free API as backup"""
-    try:
-        # Cohere has a generous free tier
-        # Users can sign up at https://cohere.ai
-        cohere_key = os.getenv("COHERE_API_KEY")
-        if not cohere_key:
-            return None
+            response = requests.post(url, headers=headers, json=payload, timeout=10)
             
-        import requests
-        headers = {
-            "Authorization": f"Bearer {cohere_key}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": "command-light",  # Free tier model
-            "prompt": prompt,
-            "max_tokens": 150,
-            "temperature": 0.7
-        }
-        
-        response = requests.post(
-            "https://api.cohere.ai/v1/generate",
-            headers=headers,
-            json=payload,
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result.get("generations", [{}])[0].get("text", "").strip()
-    except:
-        pass
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Handle different response formats
+                if isinstance(result, list) and len(result) > 0:
+                    generated_text = result[0].get("generated_text", "")
+                elif isinstance(result, dict):
+                    generated_text = result.get("generated_text", "")
+                else:
+                    st.session_state.failed_models.add(current_model)
+                    continue
+                
+                # Clean up the response
+                if generated_text:
+                    cleaned_text = generated_text.replace(prompt, "").strip()
+                    if len(cleaned_text) > 10:
+                        st.session_state.working_model = current_model
+                        st.success(f"🤖 AI content generated!")
+                        return cleaned_text
+                
+                st.session_state.failed_models.add(current_model)
+                
+            elif response.status_code == 403:
+                st.session_state.failed_models.add(current_model)
+                continue
+            elif response.status_code == 503:
+                continue  # Model loading, don't mark as failed
+            else:
+                st.session_state.failed_models.add(current_model)
+                continue
+                
+        except:
+            st.session_state.failed_models.add(current_model)
+            continue
+    
+    # Only show this message once if no models work
+    if len(st.session_state.failed_models) >= len(FREE_MODELS) and not hasattr(st.session_state, 'api_message_shown'):
+        st.info("ℹ️ Using curated questions (AI models require premium access)")
+        st.session_state.api_message_shown = True
+    
     return None
+    
+
     if not HF_API_KEY:
         st.warning("⚠️ Hugging Face API key not found. Using fallback questions for now. Add HF_API_KEY to get AI-generated questions!")
         return None
@@ -356,32 +313,25 @@ def call_groq_api(prompt: str, model: str = "llama3-8b-8192") -> Optional[str]:
         st.error(f"Groq API error: {str(e)}")
         return None
 
-# Generate AI quests with free models
+# Generate AI quests with smart caching
 def generate_quest(topic: str, difficulty: str = "medium") -> Optional[List[Dict]]:
-    # Try AI generation first if API key is available
-    if HF_API_KEY:
-        # Create different prompts for different models
-        prompts_to_try = [
-            # Simple, direct prompt for T5 models
-            f"Create a {difficulty} quiz question about {topic} for high school students with 4 options and answer.",
-            
-            # More specific prompt for GPT-2 style models
-            f"Question: What is important to know about {topic}?\nA) ",
-            
-            # Educational prompt
-            f"Generate educational content about {topic} for students:",
-        ]
+    # Only try AI once per topic if we have an API key
+    if HF_API_KEY and not st.session_state.get('api_attempted_for_topic') == topic:
+        st.session_state.api_attempted_for_topic = topic
         
-        for prompt in prompts_to_try:
+        # Simple prompt that works better with free models
+        prompt = f"Create a quiz question about {topic}: What is"
+        
+        with st.spinner("🎲 Generating AI content..."):
             response = call_huggingface_api(prompt)
-            if response and len(response.strip()) > 20:
-                # Try to create a question from the AI response
-                ai_question = create_question_from_ai_response(response, topic, difficulty)
-                if ai_question:
-                    # Return AI-generated question plus fallbacks
-                    fallback_questions = get_subject_questions(topic, difficulty)
-                    return [ai_question] + fallback_questions[:2]
-                break
+            
+        if response and len(response.strip()) > 15:
+            # Try to create a question from the AI response
+            ai_question = create_question_from_ai_response(response, topic, difficulty)
+            if ai_question:
+                # Return AI-generated question plus fallbacks
+                fallback_questions = get_subject_questions(topic, difficulty)
+                return [ai_question] + fallback_questions[:2]
     
     # Use enhanced subject-specific questions
     return get_subject_questions(topic, difficulty)
