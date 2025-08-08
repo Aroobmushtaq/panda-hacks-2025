@@ -125,11 +125,19 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # List of free models to try (in order of preference)
 FREE_MODELS = [
-    "google/flan-t5-base",           # Great for Q&A, very reliable
-    "microsoft/DialoGPT-medium",     # Good for conversations
-    "gpt2",                          # Classic, always works
-    "distilbert-base-uncased",       # Fast and efficient
-    "facebook/blenderbot-400M-distill", # Good for educational content
+    # Text generation models that usually work with free API
+    "openai-community/gpt2",         # Most reliable
+    "google/flan-t5-small",          # Smaller, more accessible
+    "distilgpt2",                    # Lightweight GPT-2
+    "microsoft/DialoGPT-small",      # Smaller version
+    "facebook/opt-125m",             # Meta's open model
+    "bigscience/bloom-560m",         # Multilingual model
+    "EleutherAI/gpt-neo-125M",       # EleutherAI model
+    "google/flan-t5-base",           # Keep trying the good ones
+    "microsoft/DialoGPT-medium",     
+    "gpt2",                          
+    "distilbert-base-uncased",       
+    "facebook/blenderbot-400M-distill",
 ]
 
 # Hugging Face API calls with multiple model fallback
@@ -215,7 +223,51 @@ def call_huggingface_api(prompt: str, model: str = None) -> Optional[str]:
             st.warning(f"⚠️ {current_model} error: {str(e)[:50]}..., trying next...")
             continue
     
+    # Try alternative free APIs
+    if HF_API_KEY:  # Only try if user has some API interest
+        cohere_result = try_cohere_api(prompt)
+        if cohere_result:
+            st.success("✅ Generated content using Cohere API")
+            return cohere_result
+    
     st.info("🔄 All free models are busy. Using enhanced fallback questions!")
+    return None
+    
+# Alternative free API option - Cohere
+def try_cohere_api(prompt: str) -> Optional[str]:
+    """Try Cohere's free API as backup"""
+    try:
+        # Cohere has a generous free tier
+        # Users can sign up at https://cohere.ai
+        cohere_key = os.getenv("COHERE_API_KEY")
+        if not cohere_key:
+            return None
+            
+        import requests
+        headers = {
+            "Authorization": f"Bearer {cohere_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "command-light",  # Free tier model
+            "prompt": prompt,
+            "max_tokens": 150,
+            "temperature": 0.7
+        }
+        
+        response = requests.post(
+            "https://api.cohere.ai/v1/generate",
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result.get("generations", [{}])[0].get("text", "").strip()
+    except:
+        pass
     return None
     if not HF_API_KEY:
         st.warning("⚠️ Hugging Face API key not found. Using fallback questions for now. Add HF_API_KEY to get AI-generated questions!")
@@ -245,11 +297,42 @@ def call_huggingface_api(prompt: str, model: str = None) -> Optional[str]:
         st.error(f"Hugging Face API error: {str(e)}")
         return None
 
-# Groq API calls
+# Groq API calls with fallback responses
 def call_groq_api(prompt: str, model: str = "llama3-8b-8192") -> Optional[str]:
     if not GROQ_API_KEY:
-        st.warning("⚠️ Groq API key not found. Add GROQ_API_KEY for AI feedback!")
-        return None
+        # Provide helpful fallback responses instead of just warning
+        if "feedback" in prompt.lower():
+            responses = [
+                "Great work! Keep practicing to master this concept! 🎯",
+                "Excellent! You're making real progress in your studies! 🌟",
+                "Well done! This shows you understand the material! 🏆",
+                "Nice job! Your hard work is paying off! 💪"
+            ]
+        elif "explanation" in prompt.lower():
+            responses = [
+                "Remember to review the key concepts and practice similar problems.",
+                "Try breaking down the problem step by step and check your work.",
+                "Consider reviewing your notes or asking your teacher for clarification.",
+                "Don't worry - learning takes time and practice makes perfect!"
+            ]
+        elif "motivational" in prompt.lower() or "quote" in prompt.lower():
+            responses = [
+                "🌟 Every expert was once a beginner - keep going!",
+                "🚀 Success comes from consistent daily effort!",
+                "💪 You're building knowledge with every question!",
+                "🎯 Focus on progress, not perfection!",
+                "⭐ Great job staying committed to learning!"
+            ]
+        else:
+            responses = [
+                "Keep up the great work! You're learning and growing! 🌱",
+                "Remember: every mistake is a learning opportunity! 📚",
+                "Stay curious and keep asking questions! 🤔",
+                "You've got this! Learning is a journey, not a race! 🏃‍♂️"
+            ]
+        
+        import random
+        return random.choice(responses)
     
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -273,151 +356,279 @@ def call_groq_api(prompt: str, model: str = "llama3-8b-8192") -> Optional[str]:
         st.error(f"Groq API error: {str(e)}")
         return None
 
-# Generate AI quests
+# Generate AI quests with free models
 def generate_quest(topic: str, difficulty: str = "medium") -> Optional[List[Dict]]:
     # Try AI generation first if API key is available
     if HF_API_KEY:
-        # Simplified prompt that works better with free models
-        prompt = f"Generate a {difficulty} level quiz question about {topic} for high school students. Include 4 multiple choice options and indicate the correct answer."
+        # Create different prompts for different models
+        prompts_to_try = [
+            # Simple, direct prompt for T5 models
+            f"Create a {difficulty} quiz question about {topic} for high school students with 4 options and answer.",
+            
+            # More specific prompt for GPT-2 style models
+            f"Question: What is important to know about {topic}?\nA) ",
+            
+            # Educational prompt
+            f"Generate educational content about {topic} for students:",
+        ]
         
-        response = call_huggingface_api(prompt)
-        if response:
-            # Since free models may not return perfect JSON, we'll use enhanced fallbacks
-            # but still try to extract useful content
-            pass
+        for prompt in prompts_to_try:
+            response = call_huggingface_api(prompt)
+            if response and len(response.strip()) > 20:
+                # Try to create a question from the AI response
+                ai_question = create_question_from_ai_response(response, topic, difficulty)
+                if ai_question:
+                    # Return AI-generated question plus fallbacks
+                    fallback_questions = get_subject_questions(topic, difficulty)
+                    return [ai_question] + fallback_questions[:2]
+                break
     
-    # Enhanced fallback questions based on topic
+    # Use enhanced subject-specific questions
+    return get_subject_questions(topic, difficulty)
+
+def create_question_from_ai_response(response: str, topic: str, difficulty: str) -> Optional[Dict]:
+    """Create a structured question from AI response"""
+    try:
+        # Clean the response
+        response = response.strip()[:200]  # Limit length
+        
+        # If the response looks like it could be turned into a question
+        if len(response) > 10:
+            return {
+                "question": f"Based on {topic}: {response.split('.')[0]}?",
+                "options": [
+                    f"A) This is correct about {topic}",
+                    f"B) This relates to {topic} differently", 
+                    f"C) This is not about {topic}",
+                    f"D) More information is needed"
+                ],
+                "answer": "A",
+                "hint": f"Think about the key concepts in {topic}",
+                "xp": 60  # Bonus XP for AI-generated content
+            }
+    except:
+        pass
+    return None
+
+def get_subject_questions(topic: str, difficulty: str) -> List[Dict]:
+    """Get subject-specific questions based on topic"""
     topic_lower = topic.lower()
+    base_xp = 40 if difficulty == "easy" else 50 if difficulty == "medium" else 60
+    
     
     # Math questions
-    if any(word in topic_lower for word in ['math', 'algebra', 'geometry', 'calculus', 'arithmetic']):
-        return [
+    if any(word in topic_lower for word in ['math', 'algebra', 'geometry', 'calculus', 'arithmetic', 'trigonometry']):
+        questions = [
             {
                 "question": f"If 3x - 7 = 14, what is the value of x?",
                 "options": ["A) x = 7", "B) x = 5", "C) x = 9", "D) x = 3"],
                 "answer": "A",
                 "hint": "Add 7 to both sides, then divide by 3",
-                "xp": 50
+                "xp": base_xp
             },
             {
-                "question": f"What is the area of a circle with radius 4?",
-                "options": ["A) 8π", "B) 16π", "C) 4π", "D) 12π"],
+                "question": f"What is the area of a circle with radius 5?",
+                "options": ["A) 10π", "B) 25π", "C) 5π", "D) 15π"],
                 "answer": "B",
                 "hint": "Use the formula A = πr²",
-                "xp": 50
+                "xp": base_xp
             },
             {
-                "question": f"What is 15% of 200?",
-                "options": ["A) 30", "B) 25", "C) 35", "D) 40"],
+                "question": f"What is 25% of 80?",
+                "options": ["A) 20", "B) 25", "C) 15", "D) 30"],
                 "answer": "A",
-                "hint": "Convert 15% to 0.15 and multiply",
-                "xp": 50
+                "hint": "Convert 25% to 0.25 and multiply",
+                "xp": base_xp
+            },
+            {
+                "question": f"What is the slope of the line y = 3x + 2?",
+                "options": ["A) 2", "B) 3", "C) 5", "D) 1"],
+                "answer": "B",
+                "hint": "In y = mx + b, m is the slope",
+                "xp": base_xp
             }
         ]
     
-    # Science questions
-    elif any(word in topic_lower for word in ['science', 'biology', 'chemistry', 'physics']):
-        return [
+    # Science questions  
+    elif any(word in topic_lower for word in ['science', 'biology', 'chemistry', 'physics', 'anatomy']):
+        questions = [
             {
                 "question": f"What is the powerhouse of the cell?",
                 "options": ["A) Nucleus", "B) Mitochondria", "C) Ribosome", "D) Cytoplasm"],
                 "answer": "B",
                 "hint": "This organelle produces ATP energy",
-                "xp": 50
+                "xp": base_xp
             },
             {
                 "question": f"What gas do plants absorb during photosynthesis?",
                 "options": ["A) Oxygen", "B) Nitrogen", "C) Carbon dioxide", "D) Hydrogen"],
                 "answer": "C",
                 "hint": "Plants convert this gas into glucose using sunlight",
-                "xp": 50
+                "xp": base_xp
             },
             {
-                "question": f"What is the speed of light in a vacuum?",
-                "options": ["A) 300,000 km/s", "B) 150,000 km/s", "C) 299,792,458 m/s", "D) Both A and C"],
-                "answer": "D",
-                "hint": "Light travels at approximately 300,000 km/s or exactly 299,792,458 m/s",
-                "xp": 50
+                "question": f"What is the chemical symbol for sodium?",
+                "options": ["A) So", "B) S", "C) Na", "D) N"],
+                "answer": "C",
+                "hint": "It comes from the Latin word 'natrium'",
+                "xp": base_xp
+            },
+            {
+                "question": f"What type of energy does a moving object have?",
+                "options": ["A) Potential energy", "B) Kinetic energy", "C) Chemical energy", "D) Nuclear energy"],
+                "answer": "B",
+                "hint": "This energy depends on mass and velocity",
+                "xp": base_xp
             }
         ]
     
     # History questions
-    elif any(word in topic_lower for word in ['history', 'historical', 'war', 'ancient', 'medieval']):
-        return [
+    elif any(word in topic_lower for word in ['history', 'historical', 'war', 'ancient', 'medieval', 'civilization']):
+        questions = [
             {
                 "question": f"In which year did World War II end?",
                 "options": ["A) 1944", "B) 1945", "C) 1946", "D) 1947"],
                 "answer": "B",
                 "hint": "This was the year the atomic bombs were dropped on Japan",
-                "xp": 50
+                "xp": base_xp
             },
             {
                 "question": f"Who was the first President of the United States?",
                 "options": ["A) Thomas Jefferson", "B) John Adams", "C) George Washington", "D) Benjamin Franklin"],
                 "answer": "C",
                 "hint": "He led the Continental Army during the Revolutionary War",
-                "xp": 50
+                "xp": base_xp
             },
             {
                 "question": f"The Renaissance began in which country?",
                 "options": ["A) France", "B) England", "C) Spain", "D) Italy"],
                 "answer": "D",
                 "hint": "Think of cities like Florence and Venice",
-                "xp": 50
+                "xp": base_xp
+            },
+            {
+                "question": f"Which empire built Machu Picchu?",
+                "options": ["A) Aztec", "B) Maya", "C) Inca", "D) Roman"],
+                "answer": "C",
+                "hint": "This empire was located in modern-day Peru",
+                "xp": base_xp
             }
         ]
     
     # English/Literature questions
-    elif any(word in topic_lower for word in ['english', 'literature', 'grammar', 'writing']):
-        return [
+    elif any(word in topic_lower for word in ['english', 'literature', 'grammar', 'writing', 'poetry']):
+        questions = [
             {
                 "question": f"What is a metaphor?",
                 "options": ["A) A direct comparison using 'like' or 'as'", "B) An indirect comparison", "C) A repeated sound", "D) An exaggeration"],
                 "answer": "B",
                 "hint": "Unlike a simile, this doesn't use 'like' or 'as'",
-                "xp": 50
+                "xp": base_xp
             },
             {
                 "question": f"Who wrote 'Romeo and Juliet'?",
                 "options": ["A) Charles Dickens", "B) William Shakespeare", "C) Jane Austen", "D) Mark Twain"],
                 "answer": "B",
                 "hint": "This playwright is known as the Bard of Avon",
-                "xp": 50
+                "xp": base_xp
             },
             {
                 "question": f"What is the past tense of 'run'?",
                 "options": ["A) Runned", "B) Running", "C) Ran", "D) Runs"],
                 "answer": "C",
                 "hint": "This is an irregular verb",
-                "xp": 50
+                "xp": base_xp
+            },
+            {
+                "question": f"What is alliteration?",
+                "options": ["A) Rhyming words", "B) Repeated consonant sounds", "C) A type of poem", "D) A figure of speech"],
+                "answer": "B",
+                "hint": "Think 'Peter Piper picked...'",
+                "xp": base_xp
+            }
+        ]
+    
+    # Computer Science/Programming
+    elif any(word in topic_lower for word in ['computer', 'programming', 'coding', 'python', 'javascript', 'html']):
+        questions = [
+            {
+                "question": f"What does HTML stand for?",
+                "options": ["A) Hyper Text Markup Language", "B) High Tech Modern Language", "C) Home Tool Markup Language", "D) Hyperlink and Text Markup Language"],
+                "answer": "A",
+                "hint": "It's used to structure web pages",
+                "xp": base_xp
+            },
+            {
+                "question": f"Which symbol is used for comments in Python?",
+                "options": ["A) //", "B) #", "C) /*", "D) --"],
+                "answer": "B",
+                "hint": "It's also called a hash or pound symbol",
+                "xp": base_xp
+            },
+            {
+                "question": f"What is a variable in programming?",
+                "options": ["A) A fixed value", "B) A container for data", "C) A type of loop", "D) An error"],
+                "answer": "B",
+                "hint": "It stores information that can change",
+                "xp": base_xp
+            }
+        ]
+    
+    # Geography
+    elif any(word in topic_lower for word in ['geography', 'countries', 'continents', 'capitals', 'maps']):
+        questions = [
+            {
+                "question": f"What is the largest continent?",
+                "options": ["A) Africa", "B) North America", "C) Asia", "D) Europe"],
+                "answer": "C",
+                "hint": "It contains countries like China, India, and Russia",
+                "xp": base_xp
+            },
+            {
+                "question": f"What is the capital of Australia?",
+                "options": ["A) Sydney", "B) Melbourne", "C) Canberra", "D) Perth"],
+                "answer": "C",
+                "hint": "It's not the largest city, but the planned capital",
+                "xp": base_xp
+            },
+            {
+                "question": f"Which river is the longest in the world?",
+                "options": ["A) Amazon", "B) Nile", "C) Mississippi", "D) Yangtze"],
+                "answer": "B",
+                "hint": "It flows through Egypt",
+                "xp": base_xp
             }
         ]
     
     # Generic questions for any topic
     else:
-        return [
+        questions = [
             {
                 "question": f"What is the most effective way to study {topic}?",
                 "options": ["A) Cramming the night before", "B) Regular practice and review", "C) Reading once", "D) Memorizing without understanding"],
                 "answer": "B",
                 "hint": "Consistent practice leads to better retention",
-                "xp": 50
+                "xp": base_xp
             },
             {
                 "question": f"Why is understanding {topic} important?",
                 "options": ["A) Only for exams", "B) For practical applications", "C) To impress others", "D) It's not important"],
                 "answer": "B",
                 "hint": "Most subjects have real-world applications",
-                "xp": 50
+                "xp": base_xp
             },
             {
                 "question": f"What should you do if you're struggling with {topic}?",
                 "options": ["A) Give up", "B) Ask for help", "C) Ignore it", "D) Complain"],
                 "answer": "B",
                 "hint": "Teachers and peers are there to support your learning",
-                "xp": 50
+                "xp": base_xp
             }
         ]
+    
+    # Return 3 random questions from the category
+    import random
+    return random.sample(questions, min(3, len(questions)))
 
 # Update streak and XP
 def update_progress(xp_gained: int, subject: str):
