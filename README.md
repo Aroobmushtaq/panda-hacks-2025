@@ -96,18 +96,6 @@ GROQ_API_KEY=your_groq_api_key_here
 streamlit run app.py
 ```
 
-## 🔧 Configuration
-
-### API Models Used
-- **Hugging Face**: `mistralai/Mistral-7B-Instruct-v0.2` for quest generation
-- **Groq**: `llama3-8b-8192` for instant feedback and explanations
-
-### Customization Options
-- Modify badge thresholds in the `check_badges()` function
-- Add new subjects or difficulty levels
-- Customize XP rewards for different activities
-- Change timer durations in Focus Mode
-
 ## 📱 How to Use StudyQuest
 
 ### 🏠 Home Tab
@@ -153,46 +141,3 @@ streamlit run app.py
 - 🚀 **Study Rocket**: 14 days
 - 💎 **Diamond Dedication**: 30 days
 
-## 🛠️ Technical Details
-
-### Architecture
-```
-StudyQuest/
-├── app.py              # Main Streamlit application
-├── requirements.txt    # Python dependencies
-├── README.md          # This file
-├── user_data.json     # Local storage (auto-generated)
-└── .env              # Environment variables (local only)
-```
-
-### Data Storage
-- **Local Mode**: JSON file storage for user progress
-- **Production**: All data stored in memory/session state
-- **Future**: Can be extended with Firebase or PostgreSQL
-
-### API Integration
-- **Error Handling**: Graceful fallbacks if APIs are unavailable
-- **Rate Limiting**: Built-in request management
-- **Retry Logic**: Automatic retries for failed requests
-
-## 🔒 Security & Privacy
-
-- API keys stored securely in environment variables
-- No personal data collected beyond study progress
-- All data stays local or in your Hugging Face Space
-- No external tracking or analytics
-
-## 🤝 Contributing
-
-Want to improve StudyQuest? Here are some ideas:
-
-### 🆕 Feature Ideas
-- **Multiplayer Mode**: Compete with friends
-- **Subject Categories**: Organize topics better
-- **Study Plans**: Long-term learning paths
-- **Voice Mode**: Audio questions and answers
-- **Mobile App**: React Native version
-- **Analytics**: Detailed progress reports
-
-
--
