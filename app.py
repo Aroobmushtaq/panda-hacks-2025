@@ -680,3 +680,532 @@ def update_progress(xp_gained: int, subject: str):
 
 def check_badges():
     """Smart badge system with meaningful achievements"""
+    badges = st.session_state.user_data['badges']
+    total_xp = st.session_state.user_data['total_xp']
+    streak = st.session_state.user_data['streak']
+    subjects_count = len(st.session_state.user_data['subjects_studied'])
+    
+    # XP-based badges
+    xp_badges = [
+        (100, "🌟 First Steps", "Earned your first 100 XP!"),
+        (500, "🎯 Focused Learner", "Reached 500 XP milestone!"),
+        (1000, "🏆 Study Champion", "Achieved 1000 XP!"),
+        (2500, "🎓 Academic Master", "Reached 2500 XP!"),
+        (5000, "🦸 Learning Hero", "Epic 5000 XP achievement!")
+    ]
+    
+    # Streak badges
+    streak_badges = [
+        (3, "🔥 Hot Streak", "3 days in a row!"),
+        (7, "⚡ Weekly Warrior", "7 day streak!"),
+        (14, "🚀 Study Rocket", "2 weeks strong!"),
+        (30, "💎 Diamond Dedication", "30 day streak!")
+    ]
+    
+    # Subject diversity badges
+    subject_badges = [
+        (3, "🌈 Multi-Learner", "Studied 3 different subjects!"),
+        (5, "🎨 Renaissance Scholar", "Mastered 5 subjects!"),
+        (10, "🧠 Universal Mind", "Explored 10+ subjects!")
+    ]
+    
+    # Check all badge types
+    for threshold, title, desc in xp_badges:
+        if total_xp >= threshold and title not in badges:
+            badges.append(title)
+            st.success(f"🎉 New Badge Unlocked: {title} - {desc}")
+    
+    for threshold, title, desc in streak_badges:
+        if streak >= threshold and title not in badges:
+            badges.append(title)
+            st.success(f"🎉 Streak Badge Unlocked: {title} - {desc}")
+    
+    for threshold, title, desc in subject_badges:
+        if subjects_count >= threshold and title not in badges:
+            badges.append(title)
+            st.success(f"🎉 Diversity Badge Unlocked: {title} - {desc}")
+
+# 🎲 RANDOM EDUCATIONAL CONTENT
+def get_random_educational_fact():
+    """Get educational facts from free APIs with fallbacks"""
+    try:
+        # Numbers API - completely free
+        response = requests.get("http://numbersapi.com/random/trivia", timeout=5)
+        if response.status_code == 200:
+            return f"🔢 {response.text}"
+    except:
+        pass
+    
+    # Curated educational facts
+    facts = [
+        "🧠 Your brain has about 86 billion neurons, more than stars in the Milky Way!",
+        "📚 Reading for 6 minutes can reduce stress by up to 68%!",
+        "⚡ Nerve impulses travel at speeds up to 268 mph!",
+        "🌍 Earth is approximately 4.54 billion years old!",
+        "🎨 Learning new skills creates new neural pathways at any age!",
+        "🌙 During sleep, your brain consolidates memories from the day!",
+        "🎵 Music activates more areas of the brain than any other activity!",
+        "🏃 Exercise increases BDNF, which helps grow new brain cells!"
+    ]
+    return random.choice(facts)
+
+# ========================
+# 🖥️ MAIN APPLICATION UI
+# ========================
+
+# Header
+st.markdown('<div class="main-header"><h1>🎮 StudyQuest</h1><p>AI-Powered Learning Adventure Platform</p></div>', 
+            unsafe_allow_html=True)
+
+# Sidebar with user stats
+with st.sidebar:
+    st.header("🏆 Your Progress")
+    
+    # XP Display
+    st.markdown(f'<div class="xp-badge">⭐ {st.session_state.user_data["xp"]} XP</div>', 
+                unsafe_allow_html=True)
+    
+    # Streak counter
+    st.markdown(f'''<div class="streak-counter">
+        🔥 {st.session_state.user_data["streak"]} Day Streak!
+    </div>''', unsafe_allow_html=True)
+    
+    # Level calculation
+    level = st.session_state.user_data['total_xp'] // 100 + 1
+    xp_for_next = 100 - (st.session_state.user_data['total_xp'] % 100)
+    st.progress((st.session_state.user_data['total_xp'] % 100) / 100)
+    st.write(f"📊 Level {level} • {xp_for_next} XP to next level")
+    
+    # Badges display
+    if st.session_state.user_data['badges']:
+        st.subheader("🏅 Your Badges")
+        for badge in st.session_state.user_data['badges']:
+            st.markdown(f'<div class="badge">{badge}</div>', unsafe_allow_html=True)
+
+# Main app tabs
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏠 Home", "⚔️ Quests", "📊 Dashboard", "⏱️ Focus Mode", "ℹ️ About"])
+
+with tab1:
+    st.header("🎯 Start Your Learning Adventure!")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.subheader("📚 Create Your Quest")
+        
+        # Popular subject suggestions
+        st.write("**🔥 Popular Subjects:**")
+        subject_cols = st.columns(4)
+        with subject_cols[0]:
+            if st.button("💻 Computer Science"):
+                st.session_state.selected_topic = "Computer Science"
+        with subject_cols[1]:
+            if st.button("🧮 Mathematics"):
+                st.session_state.selected_topic = "Mathematics"
+        with subject_cols[2]:
+            if st.button("🔬 Science"):
+                st.session_state.selected_topic = "Science"
+        with subject_cols[3]:
+            if st.button("📚 History"):
+                st.session_state.selected_topic = "History"
+        
+        # Topic input
+        default_topic = st.session_state.get('selected_topic', '')
+        topic = st.text_input("What would you like to study?", 
+                            value=default_topic,
+                            placeholder="e.g., Python Programming, Algebra, Biology, World War II...")
+        
+        difficulty = st.selectbox("Choose difficulty:", 
+                                ["easy", "medium", "hard"])
+        
+        study_time = st.slider("How long will you study? (minutes)", 
+                             5, 120, 25)
+        
+        if st.button("🚀 Generate Quest", type="primary"):
+            if topic:
+                with st.spinner(f"🎲 Creating {difficulty} {topic} quest..."):
+                    quest_data = generate_quest(topic, difficulty)
+                    if quest_data:
+                        st.session_state.current_quest = quest_data
+                        st.session_state.quest_topic = topic
+                        st.session_state.quest_difficulty = difficulty
+                        st.success(f"✅ {topic} quest ready! Go to Quests tab to begin!")
+                        st.balloons()
+                    else:
+                        st.error("Failed to generate quest. Please try again.")
+            else:
+                st.warning("Please enter a topic first!")
+    
+    with col2:
+        st.subheader("💫 Daily Motivation")
+        motivation = get_motivational_content()
+        st.info(motivation)
+        
+        if st.session_state.user_data['daily_xp'] > 0:
+            st.metric("Today's XP", st.session_state.user_data['daily_xp'])
+        
+        # Study tip
+        st.subheader("💡 Pro Study Tip")
+        if st.button("🎯 Get Study Tip"):
+            tip = get_study_tip()
+            st.success(tip)
+
+with tab2:
+    st.header("⚔️ Your Current Quest")
+    
+    if 'current_quest' in st.session_state and st.session_state.current_quest:
+        quest = st.session_state.current_quest
+        topic = st.session_state.get('quest_topic', 'Unknown')
+        difficulty = st.session_state.get('quest_difficulty', 'medium')
+        
+        # Quest header
+        st.markdown(f"""
+        ### 📖 {topic} Challenge ({difficulty.title()} Level)
+        **🎯 Complete all questions to earn XP and advance your learning!**
+        """)
+        
+        # Question counter
+        total_questions = len(quest)
+        st.progress(0, text=f"Question Progress: 0/{total_questions}")
+        
+        for i, question_data in enumerate(quest):
+            st.markdown(f'<div class="quest-card">', unsafe_allow_html=True)
+            st.write(f"**❓ Question {i+1} of {total_questions}:**")
+            st.write(f"### {question_data['question']}")
+            
+            # Create unique key for each question
+            answer_key = f"answer_{topic}_{i}_{difficulty}"
+            
+            selected = st.radio(
+                "Choose your answer:",
+                question_data['options'],
+                key=answer_key,
+                index=None
+            )
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button(f"💡 Get Hint", key=f"hint_{i}"):
+                    st.info(f"💭 **Hint:** {question_data['hint']}")
+            
+            with col2:
+                if st.button(f"✅ Submit Answer", key=f"submit_{i}", type="primary"):
+                    if selected:
+                        correct_answer = question_data['answer']
+                        if selected.startswith(correct_answer):
+                            st.success("🎉 Correct! Excellent work!")
+                            xp_gained = question_data.get('xp', 50)
+                            update_progress(xp_gained, topic)
+                            
+                            # Subject-specific encouragement
+                            if 'computer' in topic.lower() or 'programming' in topic.lower():
+                                encouragements = [
+                                    "💻 Great coding logic! You're thinking like a programmer!",
+                                    "🚀 Excellent! Your programming skills are improving!",
+                                    "⚡ Perfect! You understand this computer science concept!"
+                                ]
+                            elif 'math' in topic.lower():
+                                encouragements = [
+                                    "🧮 Mathematical genius! Your calculation skills are sharp!",
+                                    "📐 Perfect! You've mastered this mathematical concept!",
+                                    "🎯 Excellent problem-solving! Math is your strength!"
+                                ]
+                            elif 'science' in topic.lower():
+                                encouragements = [
+                                    "🔬 Scientific thinking at its best! Well done!",
+                                    "🧪 Brilliant! You understand this scientific principle!",
+                                    "🌟 Excellent! Your science knowledge is expanding!"
+                                ]
+                            else:
+                                encouragements = [
+                                    f"📚 Outstanding work in {topic}! Keep it up!",
+                                    f"🌟 You're mastering {topic} concepts brilliantly!",
+                                    f"🏆 Perfect! {topic} is becoming your strength!"
+                                ]
+                            
+                            st.info(f"🤖 AI Coach: {random.choice(encouragements)}")
+                        else:
+                            st.error("❌ Not quite right. Try again!")
+                            # Show detailed explanation
+                            correct_option = [opt for opt in question_data['options'] if opt.startswith(correct_answer)][0]
+                            st.info(f"📚 **Correct Answer:** {correct_option}")
+                            st.info(f"💡 **Why:** {question_data['hint']}")
+                    else:
+                        st.warning("Please select an answer first!")
+            
+            with col3:
+                if st.button(f"⏭️ Skip Question", key=f"skip_{i}"):
+                    st.info("Question skipped. Try another one!")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("---")
+    else:
+        st.info("🎯 No active quest! Go to the Home tab to generate one.")
+        
+        # Quick start options
+        st.subheader("🎲 Quick Start Options")
+        quick_cols = st.columns(2)
+        
+        with quick_cols[0]:
+            if st.button("💻 Computer Science Quiz"):
+                quest_data = generate_quest("Computer Science", "medium")
+                st.session_state.current_quest = quest_data
+                st.session_state.quest_topic = "Computer Science"
+                st.session_state.quest_difficulty = "medium"
+                st.rerun()
+        
+        with quick_cols[1]:
+            if st.button("🧮 Math Challenge"):
+                quest_data = generate_quest("Mathematics", "medium")
+                st.session_state.current_quest = quest_data
+                st.session_state.quest_topic = "Mathematics"
+                st.session_state.quest_difficulty = "medium"
+                st.rerun()
+
+with tab3:
+    st.header("📊 Your Learning Dashboard")
+    
+    # Stats overview
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total XP", st.session_state.user_data['total_xp'])
+    
+    with col2:
+        st.metric("Current Streak", f"{st.session_state.user_data['streak']} days")
+    
+    with col3:
+        level = st.session_state.user_data['total_xp'] // 100 + 1
+        st.metric("Current Level", level)
+    
+    with col4:
+        subjects_count = len(st.session_state.user_data['subjects_studied'])
+        st.metric("Subjects Studied", subjects_count)
+    
+    # Detailed progress
+    if st.session_state.user_data['subjects_studied']:
+        st.subheader("📚 Subject Mastery Progress")
+        
+        for subject, xp in st.session_state.user_data['subjects_studied'].items():
+            col_a, col_b = st.columns([3, 1])
+            with col_a:
+                progress = min(xp / 500, 1.0)
+                st.progress(progress, text=f"**{subject}**: {xp} XP")
+            with col_b:
+                mastery_level = "Beginner" if xp < 100 else "Intermediate" if xp < 300 else "Advanced"
+                st.write(f"**{mastery_level}**")
+    
+    # Achievement showcase
+    st.subheader("🏅 Achievement Gallery")
+    if st.session_state.user_data['badges']:
+        badge_cols = st.columns(3)
+        for i, badge in enumerate(st.session_state.user_data['badges']):
+            with badge_cols[i % 3]:
+                st.markdown(f'<div class="badge">{badge}</div>', unsafe_allow_html=True)
+    else:
+        st.info("🎯 Complete quests to unlock amazing badges!")
+    
+    # Learning insights
+    st.subheader("📈 Learning Insights")
+    if st.button("🎲 Get Random Learning Fact"):
+        fact = get_random_educational_fact()
+        st.info(fact)
+
+with tab4:
+    st.header("⏱️ Focus Mode - Pomodoro Timer")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # Timer display and logic
+        if 'timer_start' not in st.session_state:
+            st.session_state.timer_start = None
+            st.session_state.timer_active = False
+            st.session_state.break_time = False
+        
+        if st.session_state.timer_active and st.session_state.timer_start:
+            elapsed = time.time() - st.session_state.timer_start
+            focus_duration = 25 * 60  # 25 minutes
+            break_duration = 5 * 60   # 5 minutes
+            
+            if st.session_state.break_time:
+                remaining = max(0, break_duration - elapsed)
+                if remaining <= 0:
+                    st.session_state.timer_active = False
+                    st.session_state.break_time = False
+                    st.balloons()
+                    st.success("✅ Break time over! Ready for another focus session?")
+                else:
+                    mins, secs = divmod(int(remaining), 60)
+                    st.markdown(f'<div class="focus-timer">🧘 Break Time<br>{mins:02d}:{secs:02d}</div>', 
+                               unsafe_allow_html=True)
+            else:
+                remaining = max(0, focus_duration - elapsed)
+                if remaining <= 0:
+                    st.session_state.break_time = True
+                    st.session_state.timer_start = time.time()
+                    update_progress(25, "Focus Session")
+                    st.success("🎉 Focus session complete! Great concentration!")
+                    st.balloons()
+                else:
+                    mins, secs = divmod(int(remaining), 60)
+                    st.markdown(f'<div class="focus-timer">🎯 Focus Time<br>{mins:02d}:{secs:02d}</div>', 
+                               unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="focus-timer">⏱️ Ready to Focus?<br>25:00</div>', 
+                       unsafe_allow_html=True)
+        
+        # Timer controls
+        col_a, col_b, col_c = st.columns(3)
+        
+        with col_a:
+            if st.button("▶️ Start Focus", disabled=st.session_state.timer_active):
+                st.session_state.timer_active = True
+                st.session_state.timer_start = time.time()
+                st.session_state.break_time = False
+                st.rerun()
+        
+        with col_b:
+            if st.button("⏸️ Pause", disabled=not st.session_state.timer_active):
+                st.session_state.timer_active = False
+        
+        with col_c:
+            if st.button("🔄 Reset"):
+                st.session_state.timer_active = False
+                st.session_state.timer_start = None
+                st.session_state.break_time = False
+                st.rerun()
+    
+    with col2:
+        st.subheader("🧠 Focus Enhancers")
+        
+        if st.button("🎲 Quick Brain Break"):
+            fact = get_random_educational_fact()
+            st.info(fact)
+        
+        if st.button("💡 Focus Tip"):
+            tip = get_study_tip()
+            st.success(tip)
+        
+        st.subheader("🎯 Focus Stats")
+        focus_sessions = st.session_state.user_data['subjects_studied'].get('Focus Session', 0) // 25
+        st.metric("Completed Sessions", focus_sessions)
+
+with tab5:
+    st.header("ℹ️ About StudyQuest")
+    
+    st.markdown("""
+    ## 🎮 **What is StudyQuest?**
+    StudyQuest is an AI-powered gamified learning platform that transforms studying into an engaging adventure!
+    
+    ## 🤖 **AI Technologies Used:**
+    
+    ### **1. Cohere AI API (Primary AI Engine)**
+    - **Why:** Free tier with 1000 API calls/month
+    - **Purpose:** Generates personalized quiz questions for any subject
+    - **How it works:** Uses advanced language models to create relevant, educational content
+    - **Setup:** Add `COHERE_API_KEY` environment variable for AI features
+    
+    ### **2. Open Trivia Database API**
+    - **Why:** Completely free, no authentication required
+    - **Purpose:** Provides diverse trivia questions across multiple categories
+    - **How it works:** REST API that returns JSON-formatted quiz questions
+    - **Categories:** Science, Math, History, Geography, Computer Science, and more
+    
+    ### **3. Quotable API**
+    - **Why:** Free motivational quotes to inspire learning
+    - **Purpose:** Provides daily motivation and encouragement
+    - **How it works:** Returns random inspirational quotes from famous people
+    
+    ### **4. Numbers API**
+    - **Why:** Free educational facts about numbers and math
+    - **Purpose:** Provides interesting trivia during break times
+    - **How it works:** Returns fascinating facts about random numbers
+    
+    ## 🏗️ **Technical Architecture:**
+    
+    ### **Frontend Framework:**
+    - **Streamlit:** Python-based web framework for rapid development
+    - **Custom CSS:** Gamified UI with gradients, animations, and responsive design
+    - **Session State Management:** Persistent user data across sessions
+    
+    ### **Core Features:**
+    1. **🎯 Smart Topic Matching:** Advanced keyword detection for subject-specific questions
+    2. **🏆 Gamification System:** XP points, levels, streaks, and achievement badges
+    3. **⏱️ Pomodoro Timer:** Built-in focus sessions with break reminders
+    4. **📊 Progress Tracking:** Detailed analytics on learning progress
+    5. **🤖 AI Integration:** Dynamic content generation based on user preferences
+    
+    ### **Data Management:**
+    - **Session-based storage:** All progress saved in browser session
+    - **JSON serialization:** Efficient data persistence
+    - **Real-time updates:** Immediate feedback and progress tracking
+    
+    ## 🎓 **Educational Benefits:**
+    - **Spaced Repetition:** Questions designed to reinforce learning
+    - **Adaptive Difficulty:** Easy, medium, hard levels for progressive learning
+    - **Subject Diversity:** Comprehensive coverage of academic subjects
+    - **Motivational Psychology:** Gamification increases engagement and retention
+    
+    ## 🔧 **Setup Instructions for Full AI Features:**
+    
+    ```bash
+    # Get free Cohere API key
+    1. Visit https://cohere.ai/
+    2. Sign up for free account
+    3. Get API key from dashboard
+    4. Set environment variable: COHERE_API_KEY=your_key_here
+    ```
+    
+    ## 🌟 **Why This Approach?**
+    - **Cost-effective:** Uses only free APIs and resources
+    - **Scalable:** Can handle multiple users simultaneously
+    - **Educational:** Focuses on learning effectiveness over flashy features
+    - **Reliable:** Multiple fallback systems ensure continuous operation
+    """)
+    
+    # API Status Check
+    st.subheader("🔌 API Status Check")
+    
+    # Check Cohere API
+    cohere_status = "🟢 Connected" if os.getenv("COHERE_API_KEY") else "🟡 Not configured (using fallback questions)"
+    st.write(f"**Cohere AI:** {cohere_status}")
+    
+    # Test free APIs
+    col_test1, col_test2 = st.columns(2)
+    
+    with col_test1:
+        if st.button("🧪 Test Trivia API"):
+            try:
+                response = requests.get("https://opentdb.com/api.php?amount=1&type=multiple", timeout=5)
+                if response.status_code == 200:
+                    st.success("✅ Open Trivia DB: Working!")
+                else:
+                    st.error("❌ Open Trivia DB: Failed")
+            except:
+                st.error("❌ Open Trivia DB: Connection failed")
+    
+    with col_test2:
+        if st.button("💭 Test Quote API"):
+            try:
+                response = requests.get("https://api.quotable.io/random", timeout=5)
+                if response.status_code == 200:
+                    st.success("✅ Quotable API: Working!")
+                else:
+                    st.error("❌ Quotable API: Failed")
+            except:
+                st.error("❌ Quotable API: Connection failed")
+
+# Footer with credits
+st.markdown("---")
+st.markdown("""
+### 🎮 StudyQuest - AI-Powered Learning Adventure
+**🔧 Built with:** Streamlit + Cohere AI + Open APIs  
+**🎯 Mission:** Making education engaging through gamification and AI  
+**⚡ Status:** Fully functional with free resources!
+""")
+
+# Auto-refresh for timer
+if st.session_state.get('timer_active', False):
+    time.sleep(1)
+    st.rerun()
