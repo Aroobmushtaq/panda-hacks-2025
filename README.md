@@ -85,4 +85,8 @@ Transform your study sessions into exciting adventures! StudyQuest uses AI to ge
 - ⚡ **Weekly Warrior**: 7 days
 - 🚀 **Study Rocket**: 14 days
 - 💎 **Diamond Dedication**: 30 days
-![Home Page](assets/study1.png)
+![Home Page](assets\study1.PNG)
+![Home Page](assets\study2.PNG)
+![Quests Page](assets\study3.PNG)
+![Dashboard Page](assets\study4.PNG)
+![Focus Mode Page](assets\study5.PNG)
