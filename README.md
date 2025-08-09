@@ -1,13 +1,3 @@
----
-title: "StudyQuest"
-emoji: "📚"
-colorFrom: "red"
-colorTo: "red"
-sdk: "streamlit"
-sdk_version: "1.48.0"
-app_file: "app.py"
-pinned: false
----
 # 🎮 StudyQuest - AI-Powered Gamified Learning
 
 Transform your study sessions into exciting adventures! StudyQuest uses AI to generate personalized learning challenges, track your progress, and reward you with XP, badges, and streaks.
