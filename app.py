@@ -709,4 +709,304 @@ def check_badges():
             st.success(f"🎉 Streak Badge Unlocked: {title}!")
 
 # Main app layout
-st.markdown('<div class="main-header"><h1>
+st.markdown('<div class="main-header"><h1>🎮 StudyQuest</h1><p>Level up your learning with enhanced quests!</p></div>', 
+            unsafe_allow_html=True)
+
+# Sidebar with user stats
+with st.sidebar:
+    st.header("🏆 Your Progress")
+    
+    # XP Display
+    st.markdown(f'<div class="xp-badge">⭐ {st.session_state.user_data["xp"]} XP</div>', 
+                unsafe_allow_html=True)
+    
+    # Streak counter
+    st.markdown(f'''<div class="streak-counter">
+        🔥 {st.session_state.user_data["streak"]} Day Streak!
+    </div>''', unsafe_allow_html=True)
+    
+    # Level calculation
+    level = st.session_state.user_data['total_xp'] // 100 + 1
+    xp_for_next = 100 - (st.session_state.user_data['total_xp'] % 100)
+    st.progress((st.session_state.user_data['total_xp'] % 100) / 100)
+    st.write(f"📊 Level {level} • {xp_for_next} XP to next level")
+    
+    # Badges
+    if st.session_state.user_data['badges']:
+        st.subheader("🏅 Your Badges")
+        for badge in st.session_state.user_data['badges']:
+            st.markdown(f'<div class="badge">{badge}</div>', unsafe_allow_html=True)
+
+# Main app tabs
+tab1, tab2, tab3, tab4 = st.tabs(["🏠 Home", "⚔️ Quests", "📊 Dashboard", "⏱️ Focus Mode"])
+
+with tab1:
+    st.header("🎯 Start Your Learning Adventure!")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.subheader("📚 Create Your Quest")
+        
+        topic = st.text_input("What would you like to study?", 
+                            placeholder="e.g., Algebra, World History, Biology...")
+        
+        difficulty = st.selectbox("Choose difficulty:", 
+                                ["easy", "medium", "hard"])
+        
+        study_time = st.slider("How long will you study? (minutes)", 
+                             5, 120, 25)
+        
+        if st.button("🚀 Generate Quest", type="primary"):
+            if topic:
+                with st.spinner("🎲 Crafting your personalized quest..."):
+                    quest_data = generate_quest(topic, difficulty)
+                    if quest_data:
+                        st.session_state.current_quest = quest_data
+                        st.session_state.quest_topic = topic
+                        st.success("✅ Quest generated! Go to the Quests tab to begin!")
+                    else:
+                        st.error("Failed to generate quest. Please try again.")
+            else:
+                st.warning("Please enter a topic first!")
+    
+    with col2:
+        st.subheader("💫 Daily Motivation")
+        quote = get_motivational_content()
+        st.info(quote)
+        
+        if st.session_state.user_data['daily_xp'] > 0:
+            st.metric("Today's XP", st.session_state.user_data['daily_xp'])
+        
+        # Random study tip
+        if st.button("💡 Get Study Tip"):
+            tip = get_study_tip()
+            st.success(tip)
+
+with tab2:
+    st.header("⚔️ Your Current Quest")
+    
+    if 'current_quest' in st.session_state and st.session_state.current_quest:
+        quest = st.session_state.current_quest
+        topic = st.session_state.get('quest_topic', 'Unknown')
+        
+        st.subheader(f"📖 {topic} Challenge")
+        
+        for i, question_data in enumerate(quest):
+            st.markdown(f'<div class="quest-card">', unsafe_allow_html=True)
+            st.write(f"**Question {i+1}:** {question_data['question']}")
+            
+            # Create unique key for each question
+            answer_key = f"answer_{i}"
+            
+            selected = st.radio(
+                "Choose your answer:",
+                question_data['options'],
+                key=answer_key,
+                index=None
+            )
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"💡 Hint", key=f"hint_{i}"):
+                    st.info(f"💭 {question_data['hint']}")
+            
+            with col2:
+                if st.button(f"✅ Submit Answer", key=f"submit_{i}"):
+                    if selected:
+                        correct_answer = question_data['answer']
+                        if selected.startswith(correct_answer):
+                            st.success("🎉 Correct! Great job!")
+                            xp_gained = question_data.get('xp', 50)
+                            update_progress(xp_gained, topic)
+                            
+                            # Show encouraging message
+                            encouragements = [
+                                "🌟 Excellent work! You're mastering this!",
+                                "🎯 Perfect! Your hard work is paying off!",
+                                "🏆 Outstanding! Keep up the momentum!",
+                                "⚡ Brilliant! You're on fire today!",
+                                "💎 Superb! Knowledge level increasing!"
+                            ]
+                            st.info(f"🤖 Coach: {random.choice(encouragements)}")
+                        else:
+                            st.error("❌ Not quite right. Try again!")
+                            # Show explanation
+                            explanations = {
+                                'A': "The correct answer is A. Review this concept and try similar problems.",
+                                'B': "The correct answer is B. Think about the key principles involved.",
+                                'C': "The correct answer is C. Consider the context and relationships.",
+                                'D': "The correct answer is D. Break down the problem step by step."
+                            }
+                            correct_letter = question_data['answer']
+                            st.info(f"📚 Explanation: {explanations.get(correct_letter, 'Review the material and try again!')}")
+                    else:
+                        st.warning("Please select an answer first!")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.info("🎯 No active quest! Go to the Home tab to generate one.")
+        
+        # Show sample questions to encourage engagement
+        st.subheader("🎲 Quick Challenge")
+        if st.button("🎯 Try a Random Question"):
+            sample_questions = get_enhanced_subject_questions("general knowledge", "medium")
+            if sample_questions:
+                st.session_state.current_quest = [sample_questions[0]]
+                st.session_state.quest_topic = "Quick Challenge"
+                st.rerun()
+
+with tab3:
+    st.header("📊 Your Learning Dashboard")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Total XP", st.session_state.user_data['total_xp'], 
+                 st.session_state.user_data.get('daily_xp', 0))
+    
+    with col2:
+        st.metric("Current Streak", f"{st.session_state.user_data['streak']} days")
+    
+    with col3:
+        level = st.session_state.user_data['total_xp'] // 100 + 1
+        st.metric("Current Level", level)
+    
+    # Subjects studied
+    if st.session_state.user_data['subjects_studied']:
+        st.subheader("📚 Subjects Mastered")
+        
+        subjects_data = st.session_state.user_data['subjects_studied']
+        for subject, xp in subjects_data.items():
+            progress = min(xp / 500, 1.0)  # Max out at 500 XP per subject for progress bar
+            st.write(f"**{subject}**: {xp} XP")
+            st.progress(progress)
+    
+    # Achievement showcase
+    st.subheader("🏅 Achievement Showcase")
+    if st.session_state.user_data['badges']:
+        st.markdown('<div class="badge-container">', unsafe_allow_html=True)
+        for badge in st.session_state.user_data['badges']:
+            st.markdown(f'<div class="badge">{badge}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.info("Start completing quests to earn badges! 🎯")
+    
+    # Fun fact section
+    st.subheader("🎲 Random Learning Fact")
+    if st.button("🌟 Get Random Fact"):
+        fact = get_random_trivia_fact()
+        st.info(fact)
+
+# Free Random Facts function
+def get_random_trivia_fact():
+    """Get educational facts from free APIs or use fallbacks"""
+    try:
+        # Try Numbers API
+        response = requests.get("http://numbersapi.com/random/trivia", timeout=5)
+        if response.status_code == 200:
+            return f"🔢 {response.text}"
+    except:
+        pass
+    
+    # Fallback educational facts
+    facts = [
+        "🧠 Your brain uses about 20% of your body's total energy!",
+        "📚 Reading for just 6 minutes can reduce stress by up to 68%!",
+        "🌍 The human brain has about 86 billion neurons!",
+        "⚡ Information travels through your nerves at up to 268 mph!",
+        "🎨 Learning a new skill increases brain plasticity at any age!",
+        "🌙 Sleep helps consolidate memories from the day!",
+        "🎵 Music can improve memory and learning ability!",
+        "🏃 Exercise increases brain-derived neurotrophic factor (BDNF)!"
+    ]
+    return random.choice(facts)
+
+with tab4:
+    st.header("⏱️ Focus Mode - Pomodoro Timer")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # Timer display
+        if 'timer_start' not in st.session_state:
+            st.session_state.timer_start = None
+            st.session_state.timer_active = False
+            st.session_state.break_time = False
+        
+        if st.session_state.timer_active and st.session_state.timer_start:
+            elapsed = time.time() - st.session_state.timer_start
+            focus_duration = 25 * 60  # 25 minutes
+            break_duration = 5 * 60   # 5 minutes
+            
+            if st.session_state.break_time:
+                remaining = max(0, break_duration - elapsed)
+                if remaining <= 0:
+                    st.session_state.timer_active = False
+                    st.session_state.break_time = False
+                    st.balloons()
+                    st.success("Break time over! Ready for another focus session?")
+                else:
+                    mins, secs = divmod(int(remaining), 60)
+                    st.markdown(f'<div class="focus-timer">🧘 Break Time<br>{mins:02d}:{secs:02d}</div>', 
+                               unsafe_allow_html=True)
+            else:
+                remaining = max(0, focus_duration - elapsed)
+                if remaining <= 0:
+                    st.session_state.break_time = True
+                    st.session_state.timer_start = time.time()
+                    update_progress(25, "Focus Session")  # Award XP for completing focus session
+                    st.success("🎉 Focus session complete! Time for a break!")
+                else:
+                    mins, secs = divmod(int(remaining), 60)
+                    st.markdown(f'<div class="focus-timer">🎯 Focus Time<br>{mins:02d}:{secs:02d}</div>', 
+                               unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="focus-timer">⏱️ Ready to Focus?<br>25:00</div>', 
+                       unsafe_allow_html=True)
+        
+        # Timer controls
+        col_a, col_b, col_c = st.columns(3)
+        
+        with col_a:
+            if st.button("▶️ Start Focus", disabled=st.session_state.timer_active):
+                st.session_state.timer_active = True
+                st.session_state.timer_start = time.time()
+                st.session_state.break_time = False
+                st.rerun()
+        
+        with col_b:
+            if st.button("⏸️ Pause", disabled=not st.session_state.timer_active):
+                st.session_state.timer_active = False
+        
+        with col_c:
+            if st.button("🔄 Reset"):
+                st.session_state.timer_active = False
+                st.session_state.timer_start = None
+                st.session_state.break_time = False
+                st.rerun()
+    
+    with col2:
+        st.subheader("🧠 Break Time Activities")
+        
+        if st.button("🎲 Get Fun Fact"):
+            fact = get_random_trivia_fact()
+            st.info(fact)
+        
+        if st.button("💡 Study Tip"):
+            tip = get_study_tip()
+            st.success(tip)
+        
+        if st.button("💫 Motivation Boost"):
+            motivation = get_motivational_content()
+            st.info(motivation)
+
+# Footer
+st.markdown("---")
+st.markdown("### 🎮 StudyQuest - Making Learning an Adventure!")
+st.markdown("**✨ Now powered by free APIs and enhanced content!**")
+
+# Auto-refresh for timer
+if st.session_state.get('timer_active', False):
+    time.sleep(1)
+    st.rerun()
