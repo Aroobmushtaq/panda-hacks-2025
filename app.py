@@ -783,7 +783,7 @@ with st.sidebar:
             st.markdown(f'<div class="badge">{badge}</div>', unsafe_allow_html=True)
 
 # Main app tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏠 Home", "⚔️ Quests", "📊 Dashboard", "⏱️ Focus Mode", "ℹ️ About"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏠 Home", "⚔️ Quests", "📊 Dashboard", "⏱️ Focus Mode"])
 
 with tab1:
     st.header("🎯 Start Your Learning Adventure!")
@@ -1170,85 +1170,6 @@ with tab4:
 #     # Check Cohere API
 #     cohere_status = "🟢 Connected" if os.getenv("COHERE_API_KEY") else "🟡 Not configured (using fallback questions)"
 #     st.write(f"**Cohere AI:** {cohere_status}")
-with tab5:
-    st.header("ℹ️ About StudyQuest")
-    
-    st.markdown("""
-    ## 🎮 **What is StudyQuest?**
-    StudyQuest is an AI-powered gamified learning platform that transforms studying into an engaging adventure!
-    
-    ## 🤖 **AI Technologies Used:**
-    
-    ### **1. Cohere AI API (Primary AI Engine)**
-    - **Why:** Free tier with 1000 API calls/month
-    - **Purpose:** Generates personalized quiz questions for any subject
-    - **How it works:** Uses advanced language models to create relevant, educational content
-    - **Setup:** Add `COHERE_API_KEY` environment variable for AI features
-    
-    ### **2. Open Trivia Database API**
-    - **Why:** Completely free, no authentication required
-    - **Purpose:** Provides diverse trivia questions across multiple categories
-    - **How it works:** REST API that returns JSON-formatted quiz questions
-    - **Categories:** Science, Math, History, Geography, Computer Science, and more
-    
-    ### **3. Quotable API**
-    - **Why:** Free motivational quotes to inspire learning
-    - **Purpose:** Provides daily motivation and encouragement
-    - **How it works:** Returns random inspirational quotes from famous people
-    
-    ### **4. Numbers API**
-    - **Why:** Free educational facts about numbers and math
-    - **Purpose:** Provides interesting trivia during break times
-    - **How it works:** Returns fascinating facts about random numbers
-    
-    ## 🏗️ **Technical Architecture:**
-    
-    ### **Frontend Framework:**
-    - **Streamlit:** Python-based web framework for rapid development
-    - **Custom CSS:** Gamified UI with gradients, animations, and responsive design
-    - **Session State Management:** Persistent user data across sessions
-    
-    ### **Core Features:**
-    1. **🎯 Smart Topic Matching:** Advanced keyword detection for subject-specific questions
-    2. **🏆 Gamification System:** XP points, levels, streaks, and achievement badges
-    3. **⏱️ Pomodoro Timer:** Built-in focus sessions with break reminders
-    4. **📊 Progress Tracking:** Detailed analytics on learning progress
-    5. **🤖 AI Integration:** Dynamic content generation based on user preferences
-    
-    ### **Data Management:**
-    - **Session-based storage:** All progress saved in browser session
-    - **JSON serialization:** Efficient data persistence
-    - **Real-time updates:** Immediate feedback and progress tracking
-    
-    ## 🎓 **Educational Benefits:**
-    - **Spaced Repetition:** Questions designed to reinforce learning
-    - **Adaptive Difficulty:** Easy, medium, hard levels for progressive learning
-    - **Subject Diversity:** Comprehensive coverage of academic subjects
-    - **Motivational Psychology:** Gamification increases engagement and retention
-    
-    ## 🔧 **Setup Instructions for Full AI Features:**
-    
-    ```bash
-    # Get free Cohere API key
-    1. Visit https://cohere.ai/
-    2. Sign up for free account
-    3. Get API key from dashboard
-    4. Set environment variable: COHERE_API_KEY=your_key_here
-    ```
-    
-    ## 🌟 **Why This Approach?**
-    - **Cost-effective:** Uses only free APIs and resources
-    - **Scalable:** Can handle multiple users simultaneously
-    - **Educational:** Focuses on learning effectiveness over flashy features
-    - **Reliable:** Multiple fallback systems ensure continuous operation
-    """)
-    
-    # API Status Check
-    st.subheader("🔌 API Status Check")
-    
-    # Check Cohere API
-    cohere_status = "🟢 Connected" if os.getenv("COHERE_API_KEY") else "🟡 Not configured (using fallback questions)"
-    st.write(f"**Cohere AI:** {cohere_status}")
     
     # Test free APIs
     col_test1, col_test2 = st.columns(2)
