@@ -86,11 +86,15 @@ Transform your study sessions into exciting adventures! StudyQuest uses AI to ge
 - 🚀 **Study Rocket**: 14 days
 - 💎 **Diamond Dedication**: 30 days
 ![Home Page](https://github.com/Aroobmushtaq/panda-hacks-2025/blob/main/assets/study1.PNG)
-<br>
+
+
 ![Home Page](https://github.com/Aroobmushtaq/panda-hacks-2025/blob/main/assets/study2.PNG)
-<br>
+
+
 ![Quests Page](https://github.com/Aroobmushtaq/panda-hacks-2025/blob/main/assets/study3.PNG)
-<br>
+
 
 ![Dashboard Page](https://github.com/Aroobmushtaq/panda-hacks-2025/blob/main/assets/study4.PNG)
+
+
 ![Focus Mode Page](https://github.com/Aroobmushtaq/panda-hacks-2025/blob/main/assets/study5.PNG)
