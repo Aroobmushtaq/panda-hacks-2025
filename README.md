@@ -41,49 +41,6 @@ Transform your study sessions into exciting adventures! StudyQuest uses AI to ge
 - Motivational quotes and achievement system
 - Responsive design with modern gradients and animations
 
-## 🚀 Quick Start
-
-### Option 1: Deploy to Hugging Face Spaces (Recommended)
-
-1. **Create a new Hugging Face Space**:
-   - Go to [Hugging Face Spaces](https://huggingface.co/spaces)
-   - Click "Create new Space"
-   - Choose "Streamlit" as the SDK
-   - Name it "studyquest" or your preferred name
-
-2. **Upload the files**:
-   - Upload `app.py`, `requirements.txt`, and `README.md`
-   - The space will automatically start building
-
-3. **Set up API keys** (IMPORTANT):
-   - Go to your Space settings
-   - Click on "Variables and secrets"
-   - Add these secrets:
-     - `GROQ_API_KEY`: Your Groq API key
-
-4. **Get your API keys**:
-   - **Groq**: Sign up at [Groq Cloud](https://console.groq.com/) and get API key
-
-### Option 2: Run Locally
-
-1. **Clone and setup**:
-```bash
-git clone <your-repo>
-cd studyquest
-pip install -r requirements.txt
-```
-
-2. **Create `.env` file**:
-```env
-HF_API_KEY=your_hugging_face_api_key_here
-GROQ_API_KEY=your_groq_api_key_here
-```
-
-3. **Run the app**:
-```bash
-streamlit run app.py
-```
-
 ## 📱 How to Use StudyQuest
 
 ### 🏠 Home Tab
@@ -128,4 +85,4 @@ streamlit run app.py
 - ⚡ **Weekly Warrior**: 7 days
 - 🚀 **Study Rocket**: 14 days
 - 💎 **Diamond Dedication**: 30 days
-
+![Home Page](assets/study1.png)
