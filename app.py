@@ -1198,12 +1198,12 @@ with tab5:
 
 # Footer with credits
 st.markdown("---")
-st.markdown("""
-### 🎮 StudyQuest - AI-Powered Learning Adventure
-**🔧 Built with:** Streamlit + Cohere AI + Open APIs  
-**🎯 Mission:** Making education engaging through gamification and AI  
-**⚡ Status:** Fully functional with free resources!
-""")
+# st.markdown("""
+# ### 🎮 StudyQuest - AI-Powered Learning Adventure
+# **🔧 Built with:** Streamlit + Cohere AI + Open APIs  
+# **🎯 Mission:** Making education engaging through gamification and AI  
+# **⚡ Status:** Fully functional with free resources!
+# """)
 
 # Auto-refresh for timer
 if st.session_state.get('timer_active', False):
