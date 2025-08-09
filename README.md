@@ -21,10 +21,29 @@ Transform your study sessions into exciting adventures! StudyQuest uses AI to ge
 - **Progress Dashboard**: Track your learning journey across subjects
 - **Focus Mode**: Pomodoro timer with AI-generated break activities
 
-### 🤖 AI Integration
-- **Hugging Face API**: Powers quest generation using Mistral-7B-Instruct
-- **Groq API**: Provides ultra-fast feedback using Llama3-8B-8192
-- **Smart Prompting**: Optimized prompts for educational content
+## 💻 Technology Stack
+### Core Framework
+
+Streamlit 1.48.0 - Python web app framework for rapid development
+Python 3.8+ - Core application logic and data processing
+
+### AI & APIs
+
+**Cohere API** - Free tier AI for intelligent question generation (Command-R model)
+**Quotable API** - Motivational quotes for daily inspiration
+**Numbers API** - Educational facts and learning trivia
+
+### Frontend Technologies
+
+**HTML5 & CSS3** - Custom styling with modern gradients and animations
+**JavaScript** - Interactive timer functionality and dynamic updates
+**Responsive Design** - Optimized for desktop, tablet, and mobile devices
+
+### Data Management
+
+**Session State** - In-memory progress tracking during active use
+**JSON Serialization** - Efficient data structure management
+**Real-time Updates** - Live progress synchronization
 
 ### 🎨 User Experience
 - Colorful, gamified interface designed for high school students
