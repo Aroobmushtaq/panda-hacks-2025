@@ -14,26 +14,26 @@ Transform your study sessions into exciting adventures! StudyQuest uses AI to ge
 ## 💻 Technology Stack
 ### Core Framework
 
-Streamlit 1.48.0 - Python web app framework for rapid development
-Python 3.8+ - Core application logic and data processing
+- **Streamlit 1.48.0** - Python web app framework for rapid development
+- **Python 3.8+** - Core application logic and data processing
 
 ### AI & APIs
 
-**Cohere API** - Free tier AI for intelligent question generation (Command-R model)
-**Quotable API** - Motivational quotes for daily inspiration
-**Numbers API** - Educational facts and learning trivia
+- **Cohere API** - Free tier AI for intelligent question generation (Command-R model)
+- **Quotable API** - Motivational quotes for daily inspiration
+- **Numbers API** - Educational facts and learning trivia
 
 ### Frontend Technologies
 
-**HTML5 & CSS3** - Custom styling with modern gradients and animations
-**JavaScript** - Interactive timer functionality and dynamic updates
-**Responsive Design** - Optimized for desktop, tablet, and mobile devices
+- **HTML5 & CSS3** - Custom styling with modern gradients and animations
+- **JavaScript** - Interactive timer functionality and dynamic updates
+- **Responsive Design** - Optimized for desktop, tablet, and mobile devices
 
 ### Data Management
 
-**Session State** - In-memory progress tracking during active use
-**JSON Serialization** - Efficient data structure management
-**Real-time Updates** - Live progress synchronization
+- **Session State** - In-memory progress tracking during active use
+- **JSON Serialization** - Efficient data structure management
+- **Real-time Updates** - Live progress synchronization
 
 ### 🎨 User Experience
 - Colorful, gamified interface designed for high school students
@@ -59,11 +59,9 @@ Python 3.8+ - Core application logic and data processing
    - Go to your Space settings
    - Click on "Variables and secrets"
    - Add these secrets:
-     - `HF_API_KEY`: Your Hugging Face API key
      - `GROQ_API_KEY`: Your Groq API key
 
 4. **Get your API keys**:
-   - **Hugging Face**: Get from [HF Settings > Access Tokens](https://huggingface.co/settings/tokens)
    - **Groq**: Sign up at [Groq Cloud](https://console.groq.com/) and get API key
 
 ### Option 2: Run Locally
